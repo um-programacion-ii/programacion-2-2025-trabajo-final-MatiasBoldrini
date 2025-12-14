@@ -1,0 +1,103 @@
+{
+  "annotations": {
+    "changelogDate": "20251214234108"
+  },
+  "applications": "*",
+  "documentation": "Evento principal\\n\\nCampos adicionales no estándar:\\n- eventoIdCatedra: ID del evento en el servidor de la cátedra\\n- eventoTipo: String (no entidad separada)\\n- organizadorNombre/organizadorApellido: campos directos\\n- ultimaActualizacion: timestamp de sincronización\\n\\nNOTA: JHipster agregará automáticamente campos de auditoría (createdBy, createdDate, etc.)",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "eventoIdCatedra",
+      "fieldType": "Long",
+      "fieldValidateRules": ["unique"]
+    },
+    {
+      "fieldName": "titulo",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "maxlength"],
+      "fieldValidateRulesMaxlength": "255"
+    },
+    {
+      "fieldName": "resumen",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "500"
+    },
+    {
+      "fieldName": "descripcion",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "fecha",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "direccion",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "500"
+    },
+    {
+      "fieldName": "imagen",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "500"
+    },
+    {
+      "fieldName": "filaAsientos",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "columnaAsientos",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "precioEntrada",
+      "fieldType": "BigDecimal"
+    },
+    {
+      "fieldName": "eventoTipo",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "100"
+    },
+    {
+      "fieldName": "organizadorNombre",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "100"
+    },
+    {
+      "fieldName": "organizadorApellido",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "100"
+    },
+    {
+      "fieldName": "estado",
+      "fieldType": "EventoEstado",
+      "fieldTypeDocumentation": "Estados posibles de un evento",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "ACTIVO,CANCELADO,EXPIRADO"
+    },
+    {
+      "fieldName": "ultimaActualizacion",
+      "fieldType": "Instant"
+    }
+  ],
+  "jpaMetamodelFiltering": true,
+  "name": "Evento",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityField": "nombre",
+      "otherEntityName": "integrante",
+      "otherEntityRelationshipName": "eventos",
+      "relationshipName": "integrantes",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceImpl"
+}

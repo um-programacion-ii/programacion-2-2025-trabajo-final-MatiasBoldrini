@@ -81,6 +81,9 @@ out/
 /build/
 /buildSrc/.gradle/
 /buildSrc/build/
+# Android build directories
+app/**/build/
+app/**/.gradle/
 
 ######################
 # Package Files
@@ -153,27 +156,20 @@ coverage/
 .nyc_output/
 
 ######################
-# Environment & Secrets
+# Environment files
 ######################
-.env
-.env.*
+.env*
 !.env.example
-*.pem
-*.key
+.envrc
 
 ######################
-# JHipster specific
-######################
-.jhipster/
-.yo-rc.json.backup
-
-######################
-# Claude Code
+# Claude AI
 ######################
 .claude/
 
 ######################
-# Project specific
+# Documentation files
 ######################
-Enunciado*.pdf
-*.md
+!README.md
+!**/README.md
+*ignore

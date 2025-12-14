@@ -2,57 +2,38 @@ package com.eventos.pf.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.time.Instant;
 
 /**
- * Entidad que representa la sesión de compra de un usuario.
+ * Sesión de compra del usuario
+ *
  * Permite recuperar el estado de compra si el usuario cambia de dispositivo.
+ * Los campos asientosSeleccionados y datosPersonas almacenan JSON.
  */
 @Entity
 @Table(name = "sesion_compra")
+@SuppressWarnings("common-java:DuplicatedBlocks")
 public class SesionCompra implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id")
-    @JsonIgnoreProperties(value = { "authorities" }, allowSetters = true)
-    private User usuario;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "evento_id")
-    @JsonIgnoreProperties(value = { "integrantes" }, allowSetters = true)
-    private Evento evento;
-
-    /**
-     * Paso actual en el flujo de compra:
-     * 1 = Selección de evento
-     * 2 = Selección de asientos
-     * 3 = Ingreso de datos de personas
-     * 4 = Confirmación de compra
-     */
     @NotNull
     @Column(name = "paso_actual", nullable = false)
-    private Integer pasoActual = 1;
+    private Integer pasoActual;
 
-    /**
-     * Asientos seleccionados en formato JSON.
-     * Ejemplo: [{"fila": 1, "columna": 2}, {"fila": 1, "columna": 3}]
-     */
-    @Column(name = "asientos_seleccionados", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "asientos_seleccionados")
     private String asientosSeleccionados;
 
-    /**
-     * Datos de las personas para cada asiento en formato JSON.
-     * Ejemplo: [{"nombre": "Juan", "apellido": "Perez"}, ...]
-     */
-    @Column(name = "datos_personas", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "datos_personas")
     private String datosPersonas;
 
     @Column(name = "fecha_creacion")
@@ -63,33 +44,129 @@ public class SesionCompra implements Serializable {
 
     @NotNull
     @Column(name = "activa", nullable = false)
-    private Boolean activa = true;
+    private Boolean activa;
 
-    // Getters y Setters
+    /**
+     * Cada sesión pertenece a un usuario
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User usuario;
+
+    /**
+     * Cada sesión está asociada a un evento
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties(value = { "integrantes" }, allowSetters = true)
+    private Evento evento;
+
+    // jhipster-needle-entity-add-field - JHipster will add fields here
 
     public Long getId() {
-        return id;
+        return this.id;
+    }
+
+    public SesionCompra id(Long id) {
+        this.setId(id);
+        return this;
     }
 
     public void setId(Long id) {
         this.id = id;
     }
 
+    public Integer getPasoActual() {
+        return this.pasoActual;
+    }
+
+    public SesionCompra pasoActual(Integer pasoActual) {
+        this.setPasoActual(pasoActual);
+        return this;
+    }
+
+    public void setPasoActual(Integer pasoActual) {
+        this.pasoActual = pasoActual;
+    }
+
+    public String getAsientosSeleccionados() {
+        return this.asientosSeleccionados;
+    }
+
+    public SesionCompra asientosSeleccionados(String asientosSeleccionados) {
+        this.setAsientosSeleccionados(asientosSeleccionados);
+        return this;
+    }
+
+    public void setAsientosSeleccionados(String asientosSeleccionados) {
+        this.asientosSeleccionados = asientosSeleccionados;
+    }
+
+    public String getDatosPersonas() {
+        return this.datosPersonas;
+    }
+
+    public SesionCompra datosPersonas(String datosPersonas) {
+        this.setDatosPersonas(datosPersonas);
+        return this;
+    }
+
+    public void setDatosPersonas(String datosPersonas) {
+        this.datosPersonas = datosPersonas;
+    }
+
+    public Instant getFechaCreacion() {
+        return this.fechaCreacion;
+    }
+
+    public SesionCompra fechaCreacion(Instant fechaCreacion) {
+        this.setFechaCreacion(fechaCreacion);
+        return this;
+    }
+
+    public void setFechaCreacion(Instant fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
+    public Instant getFechaExpiracion() {
+        return this.fechaExpiracion;
+    }
+
+    public SesionCompra fechaExpiracion(Instant fechaExpiracion) {
+        this.setFechaExpiracion(fechaExpiracion);
+        return this;
+    }
+
+    public void setFechaExpiracion(Instant fechaExpiracion) {
+        this.fechaExpiracion = fechaExpiracion;
+    }
+
+    public Boolean getActiva() {
+        return this.activa;
+    }
+
+    public SesionCompra activa(Boolean activa) {
+        this.setActiva(activa);
+        return this;
+    }
+
+    public void setActiva(Boolean activa) {
+        this.activa = activa;
+    }
+
     public User getUsuario() {
-        return usuario;
+        return this.usuario;
     }
 
-    public void setUsuario(User usuario) {
-        this.usuario = usuario;
+    public void setUsuario(User user) {
+        this.usuario = user;
     }
 
-    public SesionCompra usuario(User usuario) {
-        this.setUsuario(usuario);
+    public SesionCompra usuario(User user) {
+        this.setUsuario(user);
         return this;
     }
 
     public Evento getEvento() {
-        return evento;
+        return this.evento;
     }
 
     public void setEvento(Evento evento) {
@@ -101,83 +178,7 @@ public class SesionCompra implements Serializable {
         return this;
     }
 
-    public Integer getPasoActual() {
-        return pasoActual;
-    }
-
-    public void setPasoActual(Integer pasoActual) {
-        this.pasoActual = pasoActual;
-    }
-
-    public SesionCompra pasoActual(Integer pasoActual) {
-        this.setPasoActual(pasoActual);
-        return this;
-    }
-
-    public String getAsientosSeleccionados() {
-        return asientosSeleccionados;
-    }
-
-    public void setAsientosSeleccionados(String asientosSeleccionados) {
-        this.asientosSeleccionados = asientosSeleccionados;
-    }
-
-    public SesionCompra asientosSeleccionados(String asientosSeleccionados) {
-        this.setAsientosSeleccionados(asientosSeleccionados);
-        return this;
-    }
-
-    public String getDatosPersonas() {
-        return datosPersonas;
-    }
-
-    public void setDatosPersonas(String datosPersonas) {
-        this.datosPersonas = datosPersonas;
-    }
-
-    public SesionCompra datosPersonas(String datosPersonas) {
-        this.setDatosPersonas(datosPersonas);
-        return this;
-    }
-
-    public Instant getFechaCreacion() {
-        return fechaCreacion;
-    }
-
-    public void setFechaCreacion(Instant fechaCreacion) {
-        this.fechaCreacion = fechaCreacion;
-    }
-
-    public SesionCompra fechaCreacion(Instant fechaCreacion) {
-        this.setFechaCreacion(fechaCreacion);
-        return this;
-    }
-
-    public Instant getFechaExpiracion() {
-        return fechaExpiracion;
-    }
-
-    public void setFechaExpiracion(Instant fechaExpiracion) {
-        this.fechaExpiracion = fechaExpiracion;
-    }
-
-    public SesionCompra fechaExpiracion(Instant fechaExpiracion) {
-        this.setFechaExpiracion(fechaExpiracion);
-        return this;
-    }
-
-    public Boolean getActiva() {
-        return activa;
-    }
-
-    public void setActiva(Boolean activa) {
-        this.activa = activa;
-    }
-
-    public SesionCompra activa(Boolean activa) {
-        this.setActiva(activa);
-        return this;
-    }
+    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
     public boolean equals(Object o) {
@@ -187,23 +188,26 @@ public class SesionCompra implements Serializable {
         if (!(o instanceof SesionCompra)) {
             return false;
         }
-        return id != null && id.equals(((SesionCompra) o).id);
+        return getId() != null && getId().equals(((SesionCompra) o).getId());
     }
 
     @Override
     public int hashCode() {
+        // see https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/
         return getClass().hashCode();
     }
 
+    // prettier-ignore
     @Override
     public String toString() {
         return "SesionCompra{" +
             "id=" + getId() +
             ", pasoActual=" + getPasoActual() +
+            ", asientosSeleccionados='" + getAsientosSeleccionados() + "'" +
+            ", datosPersonas='" + getDatosPersonas() + "'" +
             ", fechaCreacion='" + getFechaCreacion() + "'" +
             ", fechaExpiracion='" + getFechaExpiracion() + "'" +
             ", activa='" + getActiva() + "'" +
             "}";
     }
 }
-

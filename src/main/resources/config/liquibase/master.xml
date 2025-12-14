@@ -13,7 +13,16 @@
 
     <include file="config/liquibase/changelog/00000000000000_initial_schema.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251127000000_added_entity_Evento.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251214234108_added_entity_Evento.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251214234109_added_entity_Integrante.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251214234110_added_entity_Venta.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251214234111_added_entity_VentaAsiento.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251214234112_added_entity_SesionCompra.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
+    <include file="config/liquibase/changelog/20251214234108_added_entity_constraints_Evento.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251214234110_added_entity_constraints_Venta.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251214234111_added_entity_constraints_VentaAsiento.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251214234112_added_entity_constraints_SesionCompra.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

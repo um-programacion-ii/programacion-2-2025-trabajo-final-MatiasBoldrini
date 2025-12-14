@@ -1,9 +1,9 @@
 package com.eventos.pf.domain;
 
 import com.eventos.pf.domain.enumeration.EventoEstado;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -11,21 +11,28 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Entidad que representa un evento (charla, curso, obra de teatro).
+ * Evento principal
+ *
+ * Campos adicionales no estándar:
+ * - eventoIdCatedra: ID del evento en el servidor de la cátedra
+ * - eventoTipo: String (no entidad separada)
+ * - organizadorNombre/organizadorApellido: campos directos
+ * - ultimaActualizacion: timestamp de sincronización
+ *
+ * NOTA: JHipster agregará automáticamente campos de auditoría (createdBy, createdDate, etc.)
  */
 @Entity
 @Table(name = "evento")
-public class Evento extends AbstractAuditingEntity<Long> implements Serializable {
+@SuppressWarnings("common-java:DuplicatedBlocks")
+public class Evento implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    /**
-     * ID del evento en el servidor de la cátedra.
-     */
     @Column(name = "evento_id_catedra", unique = true)
     private Long eventoIdCatedra;
 
@@ -38,7 +45,8 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
     @Column(name = "resumen", length = 500)
     private String resumen;
 
-    @Column(name = "descripcion", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "descripcion")
     private String descripcion;
 
     @Column(name = "fecha")
@@ -76,18 +84,29 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false)
-    private EventoEstado estado = EventoEstado.ACTIVO;
+    private EventoEstado estado;
 
     @Column(name = "ultima_actualizacion")
     private Instant ultimaActualizacion;
 
-    @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "rel_evento__integrantes",
+        joinColumns = @JoinColumn(name = "evento_id"),
+        inverseJoinColumns = @JoinColumn(name = "integrantes_id")
+    )
+    @JsonIgnoreProperties(value = { "eventos" }, allowSetters = true)
     private Set<Integrante> integrantes = new HashSet<>();
 
-    // Getters y Setters
+    // jhipster-needle-entity-add-field - JHipster will add fields here
 
     public Long getId() {
-        return id;
+        return this.id;
+    }
+
+    public Evento id(Long id) {
+        this.setId(id);
+        return this;
     }
 
     public void setId(Long id) {
@@ -95,11 +114,7 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
     }
 
     public Long getEventoIdCatedra() {
-        return eventoIdCatedra;
-    }
-
-    public void setEventoIdCatedra(Long eventoIdCatedra) {
-        this.eventoIdCatedra = eventoIdCatedra;
+        return this.eventoIdCatedra;
     }
 
     public Evento eventoIdCatedra(Long eventoIdCatedra) {
@@ -107,12 +122,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public String getTitulo() {
-        return titulo;
+    public void setEventoIdCatedra(Long eventoIdCatedra) {
+        this.eventoIdCatedra = eventoIdCatedra;
     }
 
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
+    public String getTitulo() {
+        return this.titulo;
     }
 
     public Evento titulo(String titulo) {
@@ -120,12 +135,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public String getResumen() {
-        return resumen;
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
     }
 
-    public void setResumen(String resumen) {
-        this.resumen = resumen;
+    public String getResumen() {
+        return this.resumen;
     }
 
     public Evento resumen(String resumen) {
@@ -133,12 +148,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public String getDescripcion() {
-        return descripcion;
+    public void setResumen(String resumen) {
+        this.resumen = resumen;
     }
 
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
+    public String getDescripcion() {
+        return this.descripcion;
     }
 
     public Evento descripcion(String descripcion) {
@@ -146,12 +161,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public Instant getFecha() {
-        return fecha;
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 
-    public void setFecha(Instant fecha) {
-        this.fecha = fecha;
+    public Instant getFecha() {
+        return this.fecha;
     }
 
     public Evento fecha(Instant fecha) {
@@ -159,12 +174,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public String getDireccion() {
-        return direccion;
+    public void setFecha(Instant fecha) {
+        this.fecha = fecha;
     }
 
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
+    public String getDireccion() {
+        return this.direccion;
     }
 
     public Evento direccion(String direccion) {
@@ -172,12 +187,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public String getImagen() {
-        return imagen;
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
     }
 
-    public void setImagen(String imagen) {
-        this.imagen = imagen;
+    public String getImagen() {
+        return this.imagen;
     }
 
     public Evento imagen(String imagen) {
@@ -185,12 +200,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public Integer getFilaAsientos() {
-        return filaAsientos;
+    public void setImagen(String imagen) {
+        this.imagen = imagen;
     }
 
-    public void setFilaAsientos(Integer filaAsientos) {
-        this.filaAsientos = filaAsientos;
+    public Integer getFilaAsientos() {
+        return this.filaAsientos;
     }
 
     public Evento filaAsientos(Integer filaAsientos) {
@@ -198,12 +213,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public Integer getColumnaAsientos() {
-        return columnaAsientos;
+    public void setFilaAsientos(Integer filaAsientos) {
+        this.filaAsientos = filaAsientos;
     }
 
-    public void setColumnaAsientos(Integer columnaAsientos) {
-        this.columnaAsientos = columnaAsientos;
+    public Integer getColumnaAsientos() {
+        return this.columnaAsientos;
     }
 
     public Evento columnaAsientos(Integer columnaAsientos) {
@@ -211,12 +226,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public BigDecimal getPrecioEntrada() {
-        return precioEntrada;
+    public void setColumnaAsientos(Integer columnaAsientos) {
+        this.columnaAsientos = columnaAsientos;
     }
 
-    public void setPrecioEntrada(BigDecimal precioEntrada) {
-        this.precioEntrada = precioEntrada;
+    public BigDecimal getPrecioEntrada() {
+        return this.precioEntrada;
     }
 
     public Evento precioEntrada(BigDecimal precioEntrada) {
@@ -224,12 +239,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public String getEventoTipo() {
-        return eventoTipo;
+    public void setPrecioEntrada(BigDecimal precioEntrada) {
+        this.precioEntrada = precioEntrada;
     }
 
-    public void setEventoTipo(String eventoTipo) {
-        this.eventoTipo = eventoTipo;
+    public String getEventoTipo() {
+        return this.eventoTipo;
     }
 
     public Evento eventoTipo(String eventoTipo) {
@@ -237,12 +252,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public String getOrganizadorNombre() {
-        return organizadorNombre;
+    public void setEventoTipo(String eventoTipo) {
+        this.eventoTipo = eventoTipo;
     }
 
-    public void setOrganizadorNombre(String organizadorNombre) {
-        this.organizadorNombre = organizadorNombre;
+    public String getOrganizadorNombre() {
+        return this.organizadorNombre;
     }
 
     public Evento organizadorNombre(String organizadorNombre) {
@@ -250,12 +265,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public String getOrganizadorApellido() {
-        return organizadorApellido;
+    public void setOrganizadorNombre(String organizadorNombre) {
+        this.organizadorNombre = organizadorNombre;
     }
 
-    public void setOrganizadorApellido(String organizadorApellido) {
-        this.organizadorApellido = organizadorApellido;
+    public String getOrganizadorApellido() {
+        return this.organizadorApellido;
     }
 
     public Evento organizadorApellido(String organizadorApellido) {
@@ -263,12 +278,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public EventoEstado getEstado() {
-        return estado;
+    public void setOrganizadorApellido(String organizadorApellido) {
+        this.organizadorApellido = organizadorApellido;
     }
 
-    public void setEstado(EventoEstado estado) {
-        this.estado = estado;
+    public EventoEstado getEstado() {
+        return this.estado;
     }
 
     public Evento estado(EventoEstado estado) {
@@ -276,12 +291,12 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public Instant getUltimaActualizacion() {
-        return ultimaActualizacion;
+    public void setEstado(EventoEstado estado) {
+        this.estado = estado;
     }
 
-    public void setUltimaActualizacion(Instant ultimaActualizacion) {
-        this.ultimaActualizacion = ultimaActualizacion;
+    public Instant getUltimaActualizacion() {
+        return this.ultimaActualizacion;
     }
 
     public Evento ultimaActualizacion(Instant ultimaActualizacion) {
@@ -289,17 +304,15 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
+    public void setUltimaActualizacion(Instant ultimaActualizacion) {
+        this.ultimaActualizacion = ultimaActualizacion;
+    }
+
     public Set<Integrante> getIntegrantes() {
-        return integrantes;
+        return this.integrantes;
     }
 
     public void setIntegrantes(Set<Integrante> integrantes) {
-        if (this.integrantes != null) {
-            this.integrantes.forEach(i -> i.setEvento(null));
-        }
-        if (integrantes != null) {
-            integrantes.forEach(i -> i.setEvento(this));
-        }
         this.integrantes = integrantes;
     }
 
@@ -308,17 +321,17 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         return this;
     }
 
-    public Evento addIntegrante(Integrante integrante) {
+    public Evento addIntegrantes(Integrante integrante) {
         this.integrantes.add(integrante);
-        integrante.setEvento(this);
         return this;
     }
 
-    public Evento removeIntegrante(Integrante integrante) {
+    public Evento removeIntegrantes(Integrante integrante) {
         this.integrantes.remove(integrante);
-        integrante.setEvento(null);
         return this;
     }
+
+    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
     public boolean equals(Object o) {
@@ -328,14 +341,16 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
         if (!(o instanceof Evento)) {
             return false;
         }
-        return id != null && id.equals(((Evento) o).id);
+        return getId() != null && getId().equals(((Evento) o).getId());
     }
 
     @Override
     public int hashCode() {
+        // see https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/
         return getClass().hashCode();
     }
 
+    // prettier-ignore
     @Override
     public String toString() {
         return "Evento{" +
@@ -343,14 +358,18 @@ public class Evento extends AbstractAuditingEntity<Long> implements Serializable
             ", eventoIdCatedra=" + getEventoIdCatedra() +
             ", titulo='" + getTitulo() + "'" +
             ", resumen='" + getResumen() + "'" +
+            ", descripcion='" + getDescripcion() + "'" +
             ", fecha='" + getFecha() + "'" +
             ", direccion='" + getDireccion() + "'" +
+            ", imagen='" + getImagen() + "'" +
             ", filaAsientos=" + getFilaAsientos() +
             ", columnaAsientos=" + getColumnaAsientos() +
             ", precioEntrada=" + getPrecioEntrada() +
             ", eventoTipo='" + getEventoTipo() + "'" +
+            ", organizadorNombre='" + getOrganizadorNombre() + "'" +
+            ", organizadorApellido='" + getOrganizadorApellido() + "'" +
             ", estado='" + getEstado() + "'" +
+            ", ultimaActualizacion='" + getUltimaActualizacion() + "'" +
             "}";
     }
 }
-

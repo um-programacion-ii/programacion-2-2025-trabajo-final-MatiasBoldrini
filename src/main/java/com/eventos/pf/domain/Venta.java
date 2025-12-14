@@ -2,8 +2,7 @@ package com.eventos.pf.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -11,33 +10,22 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Entidad que representa una venta de entradas.
+ * Registro de una venta
  */
 @Entity
 @Table(name = "venta")
+@SuppressWarnings("common-java:DuplicatedBlocks")
 public class Venta implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    /**
-     * ID de la venta en el servidor de la cátedra.
-     */
     @Column(name = "venta_id_catedra")
     private Long ventaIdCatedra;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id")
-    @JsonIgnoreProperties(value = { "authorities" }, allowSetters = true)
-    private User usuario;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "evento_id")
-    @JsonIgnoreProperties(value = { "integrantes" }, allowSetters = true)
-    private Evento evento;
 
     @NotNull
     @Column(name = "fecha_venta", nullable = false)
@@ -46,27 +34,42 @@ public class Venta implements Serializable {
     @Column(name = "precio_venta", precision = 21, scale = 2)
     private BigDecimal precioVenta;
 
-    /**
-     * Indica si la venta fue exitosa.
-     */
     @Column(name = "resultado")
     private Boolean resultado;
 
-    /**
-     * Descripción o mensaje de error/éxito.
-     */
     @Size(max = 500)
     @Column(name = "descripcion", length = 500)
     private String descripcion;
 
-    @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
+    /**
+     * Una venta tiene varios asientos
+     */
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "venta")
     @JsonIgnoreProperties(value = { "venta" }, allowSetters = true)
     private Set<VentaAsiento> asientos = new HashSet<>();
 
-    // Getters y Setters
+    /**
+     * Cada venta pertenece a un usuario
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User usuario;
+
+    /**
+     * Cada venta está asociada a un evento
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties(value = { "integrantes" }, allowSetters = true)
+    private Evento evento;
+
+    // jhipster-needle-entity-add-field - JHipster will add fields here
 
     public Long getId() {
-        return id;
+        return this.id;
+    }
+
+    public Venta id(Long id) {
+        this.setId(id);
+        return this;
     }
 
     public void setId(Long id) {
@@ -74,11 +77,7 @@ public class Venta implements Serializable {
     }
 
     public Long getVentaIdCatedra() {
-        return ventaIdCatedra;
-    }
-
-    public void setVentaIdCatedra(Long ventaIdCatedra) {
-        this.ventaIdCatedra = ventaIdCatedra;
+        return this.ventaIdCatedra;
     }
 
     public Venta ventaIdCatedra(Long ventaIdCatedra) {
@@ -86,21 +85,108 @@ public class Venta implements Serializable {
         return this;
     }
 
+    public void setVentaIdCatedra(Long ventaIdCatedra) {
+        this.ventaIdCatedra = ventaIdCatedra;
+    }
+
+    public Instant getFechaVenta() {
+        return this.fechaVenta;
+    }
+
+    public Venta fechaVenta(Instant fechaVenta) {
+        this.setFechaVenta(fechaVenta);
+        return this;
+    }
+
+    public void setFechaVenta(Instant fechaVenta) {
+        this.fechaVenta = fechaVenta;
+    }
+
+    public BigDecimal getPrecioVenta() {
+        return this.precioVenta;
+    }
+
+    public Venta precioVenta(BigDecimal precioVenta) {
+        this.setPrecioVenta(precioVenta);
+        return this;
+    }
+
+    public void setPrecioVenta(BigDecimal precioVenta) {
+        this.precioVenta = precioVenta;
+    }
+
+    public Boolean getResultado() {
+        return this.resultado;
+    }
+
+    public Venta resultado(Boolean resultado) {
+        this.setResultado(resultado);
+        return this;
+    }
+
+    public void setResultado(Boolean resultado) {
+        this.resultado = resultado;
+    }
+
+    public String getDescripcion() {
+        return this.descripcion;
+    }
+
+    public Venta descripcion(String descripcion) {
+        this.setDescripcion(descripcion);
+        return this;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public Set<VentaAsiento> getAsientos() {
+        return this.asientos;
+    }
+
+    public void setAsientos(Set<VentaAsiento> ventaAsientos) {
+        if (this.asientos != null) {
+            this.asientos.forEach(i -> i.setVenta(null));
+        }
+        if (ventaAsientos != null) {
+            ventaAsientos.forEach(i -> i.setVenta(this));
+        }
+        this.asientos = ventaAsientos;
+    }
+
+    public Venta asientos(Set<VentaAsiento> ventaAsientos) {
+        this.setAsientos(ventaAsientos);
+        return this;
+    }
+
+    public Venta addAsientos(VentaAsiento ventaAsiento) {
+        this.asientos.add(ventaAsiento);
+        ventaAsiento.setVenta(this);
+        return this;
+    }
+
+    public Venta removeAsientos(VentaAsiento ventaAsiento) {
+        this.asientos.remove(ventaAsiento);
+        ventaAsiento.setVenta(null);
+        return this;
+    }
+
     public User getUsuario() {
-        return usuario;
+        return this.usuario;
     }
 
-    public void setUsuario(User usuario) {
-        this.usuario = usuario;
+    public void setUsuario(User user) {
+        this.usuario = user;
     }
 
-    public Venta usuario(User usuario) {
-        this.setUsuario(usuario);
+    public Venta usuario(User user) {
+        this.setUsuario(user);
         return this;
     }
 
     public Evento getEvento() {
-        return evento;
+        return this.evento;
     }
 
     public void setEvento(Evento evento) {
@@ -112,88 +198,7 @@ public class Venta implements Serializable {
         return this;
     }
 
-    public Instant getFechaVenta() {
-        return fechaVenta;
-    }
-
-    public void setFechaVenta(Instant fechaVenta) {
-        this.fechaVenta = fechaVenta;
-    }
-
-    public Venta fechaVenta(Instant fechaVenta) {
-        this.setFechaVenta(fechaVenta);
-        return this;
-    }
-
-    public BigDecimal getPrecioVenta() {
-        return precioVenta;
-    }
-
-    public void setPrecioVenta(BigDecimal precioVenta) {
-        this.precioVenta = precioVenta;
-    }
-
-    public Venta precioVenta(BigDecimal precioVenta) {
-        this.setPrecioVenta(precioVenta);
-        return this;
-    }
-
-    public Boolean getResultado() {
-        return resultado;
-    }
-
-    public void setResultado(Boolean resultado) {
-        this.resultado = resultado;
-    }
-
-    public Venta resultado(Boolean resultado) {
-        this.setResultado(resultado);
-        return this;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public Venta descripcion(String descripcion) {
-        this.setDescripcion(descripcion);
-        return this;
-    }
-
-    public Set<VentaAsiento> getAsientos() {
-        return asientos;
-    }
-
-    public void setAsientos(Set<VentaAsiento> asientos) {
-        if (this.asientos != null) {
-            this.asientos.forEach(a -> a.setVenta(null));
-        }
-        if (asientos != null) {
-            asientos.forEach(a -> a.setVenta(this));
-        }
-        this.asientos = asientos;
-    }
-
-    public Venta asientos(Set<VentaAsiento> asientos) {
-        this.setAsientos(asientos);
-        return this;
-    }
-
-    public Venta addAsiento(VentaAsiento asiento) {
-        this.asientos.add(asiento);
-        asiento.setVenta(this);
-        return this;
-    }
-
-    public Venta removeAsiento(VentaAsiento asiento) {
-        this.asientos.remove(asiento);
-        asiento.setVenta(null);
-        return this;
-    }
+    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
     public boolean equals(Object o) {
@@ -203,14 +208,16 @@ public class Venta implements Serializable {
         if (!(o instanceof Venta)) {
             return false;
         }
-        return id != null && id.equals(((Venta) o).id);
+        return getId() != null && getId().equals(((Venta) o).getId());
     }
 
     @Override
     public int hashCode() {
+        // see https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/
         return getClass().hashCode();
     }
 
+    // prettier-ignore
     @Override
     public String toString() {
         return "Venta{" +
@@ -223,4 +230,3 @@ public class Venta implements Serializable {
             "}";
     }
 }
-

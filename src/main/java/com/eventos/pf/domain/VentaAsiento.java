@@ -2,27 +2,23 @@ package com.eventos.pf.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import java.io.Serializable;
 
 /**
- * Entidad que representa un asiento vendido en una venta.
+ * Asiento incluido en una venta
  */
 @Entity
 @Table(name = "venta_asiento")
+@SuppressWarnings("common-java:DuplicatedBlocks")
 public class VentaAsiento implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "venta_id")
-    @JsonIgnoreProperties(value = { "asientos", "usuario", "evento" }, allowSetters = true)
-    private Venta venta;
 
     @NotNull
     @Column(name = "fila", nullable = false)
@@ -32,32 +28,87 @@ public class VentaAsiento implements Serializable {
     @Column(name = "columna", nullable = false)
     private Integer columna;
 
-    /**
-     * Nombre de la persona asignada a este asiento.
-     */
     @Size(max = 200)
     @Column(name = "persona", length = 200)
     private String persona;
 
-    /**
-     * Estado del asiento: VENDIDO, BLOQUEADO, etc.
-     */
     @Size(max = 50)
     @Column(name = "estado", length = 50)
     private String estado;
 
-    // Getters y Setters
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties(value = { "asientos", "usuario", "evento" }, allowSetters = true)
+    private Venta venta;
+
+    // jhipster-needle-entity-add-field - JHipster will add fields here
 
     public Long getId() {
-        return id;
+        return this.id;
+    }
+
+    public VentaAsiento id(Long id) {
+        this.setId(id);
+        return this;
     }
 
     public void setId(Long id) {
         this.id = id;
     }
 
+    public Integer getFila() {
+        return this.fila;
+    }
+
+    public VentaAsiento fila(Integer fila) {
+        this.setFila(fila);
+        return this;
+    }
+
+    public void setFila(Integer fila) {
+        this.fila = fila;
+    }
+
+    public Integer getColumna() {
+        return this.columna;
+    }
+
+    public VentaAsiento columna(Integer columna) {
+        this.setColumna(columna);
+        return this;
+    }
+
+    public void setColumna(Integer columna) {
+        this.columna = columna;
+    }
+
+    public String getPersona() {
+        return this.persona;
+    }
+
+    public VentaAsiento persona(String persona) {
+        this.setPersona(persona);
+        return this;
+    }
+
+    public void setPersona(String persona) {
+        this.persona = persona;
+    }
+
+    public String getEstado() {
+        return this.estado;
+    }
+
+    public VentaAsiento estado(String estado) {
+        this.setEstado(estado);
+        return this;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
     public Venta getVenta() {
-        return venta;
+        return this.venta;
     }
 
     public void setVenta(Venta venta) {
@@ -69,57 +120,7 @@ public class VentaAsiento implements Serializable {
         return this;
     }
 
-    public Integer getFila() {
-        return fila;
-    }
-
-    public void setFila(Integer fila) {
-        this.fila = fila;
-    }
-
-    public VentaAsiento fila(Integer fila) {
-        this.setFila(fila);
-        return this;
-    }
-
-    public Integer getColumna() {
-        return columna;
-    }
-
-    public void setColumna(Integer columna) {
-        this.columna = columna;
-    }
-
-    public VentaAsiento columna(Integer columna) {
-        this.setColumna(columna);
-        return this;
-    }
-
-    public String getPersona() {
-        return persona;
-    }
-
-    public void setPersona(String persona) {
-        this.persona = persona;
-    }
-
-    public VentaAsiento persona(String persona) {
-        this.setPersona(persona);
-        return this;
-    }
-
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
-
-    public VentaAsiento estado(String estado) {
-        this.setEstado(estado);
-        return this;
-    }
+    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
     public boolean equals(Object o) {
@@ -129,14 +130,16 @@ public class VentaAsiento implements Serializable {
         if (!(o instanceof VentaAsiento)) {
             return false;
         }
-        return id != null && id.equals(((VentaAsiento) o).id);
+        return getId() != null && getId().equals(((VentaAsiento) o).getId());
     }
 
     @Override
     public int hashCode() {
+        // see https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/
         return getClass().hashCode();
     }
 
+    // prettier-ignore
     @Override
     public String toString() {
         return "VentaAsiento{" +
@@ -148,4 +151,3 @@ public class VentaAsiento implements Serializable {
             "}";
     }
 }
-

@@ -1,0 +1,152 @@
+/**
+ * Modelo JDL para Sistema de Venta de Entradas
+ * 
+ * ✅ ACTUALIZADO: 14 diciembre 2025
+ * Cambio principal: Relación Integrante-Evento de OneToMany → ManyToMany
+ * 
+ * Este archivo se usa para regenerar la infraestructura completa:
+ * - Repositorios JPA
+ * - Servicios e implementaciones
+ * - DTOs y Mappers (MapStruct)
+ * - Controllers REST
+ * - Tests unitarios e integración
+ */
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+/**
+ * Estados posibles de un evento
+ */
+enum EventoEstado {
+    ACTIVO,
+    CANCELADO,
+    EXPIRADO
+}
+
+// ==========================================
+// ENTIDADES
+// ==========================================
+
+/**
+ * Evento principal
+ * 
+ * Campos adicionales no estándar:
+ * - eventoIdCatedra: ID del evento en el servidor de la cátedra
+ * - eventoTipo: String (no entidad separada)
+ * - organizadorNombre/organizadorApellido: campos directos
+ * - ultimaActualizacion: timestamp de sincronización
+ * 
+ * NOTA: JHipster agregará automáticamente campos de auditoría (createdBy, createdDate, etc.)
+ */
+entity Evento {
+    eventoIdCatedra Long unique
+    titulo String required maxlength(255)
+    resumen String maxlength(500)
+    descripcion TextBlob
+    fecha Instant
+    direccion String maxlength(500)
+    imagen String maxlength(500)
+    filaAsientos Integer
+    columnaAsientos Integer
+    precioEntrada BigDecimal
+    eventoTipo String maxlength(100)
+    organizadorNombre String maxlength(100)
+    organizadorApellido String maxlength(100)
+    estado EventoEstado required
+    ultimaActualizacion Instant
+}
+
+/**
+ * Integrante/Participante de un evento
+ * CAMBIO: Ahora con relación ManyToMany (un integrante puede estar en varios eventos)
+ */
+entity Integrante {
+    nombre String required maxlength(100)
+    apellido String required maxlength(100)
+    identificacion String maxlength(100)
+}
+
+/**
+ * Registro de una venta
+ */
+entity Venta {
+    ventaIdCatedra Long
+    fechaVenta Instant required
+    precioVenta BigDecimal
+    resultado Boolean
+    descripcion String maxlength(500)
+}
+
+/**
+ * Asiento incluido en una venta
+ */
+entity VentaAsiento {
+    fila Integer required
+    columna Integer required
+    persona String maxlength(200)
+    estado String maxlength(50)
+}
+
+/**
+ * Sesión de compra del usuario
+ * 
+ * Permite recuperar el estado de compra si el usuario cambia de dispositivo.
+ * Los campos asientosSeleccionados y datosPersonas almacenan JSON.
+ */
+entity SesionCompra {
+    pasoActual Integer required
+    asientosSeleccionados TextBlob
+    datosPersonas TextBlob
+    fechaCreacion Instant
+    fechaExpiracion Instant
+    activa Boolean required
+}
+
+// ==========================================
+// RELACIONES
+// ==========================================
+
+/**
+ * CAMBIO PRINCIPAL: ManyToMany entre Evento e Integrante
+ * Esto creará una tabla intermedia 'evento_integrante'
+ */
+relationship ManyToMany {
+    Evento{integrantes(nombre)} to Integrante{eventos(titulo)}
+}
+
+relationship OneToMany {
+    /** Una venta tiene varios asientos */
+    Venta{asientos} to VentaAsiento{venta}
+}
+
+relationship ManyToOne {
+    /** Cada venta pertenece a un usuario */
+    Venta{usuario(login)} to User with builtInEntity
+    
+    /** Cada venta está asociada a un evento */
+    Venta{evento(titulo)} to Evento
+    
+    /** Cada sesión pertenece a un usuario */
+    SesionCompra{usuario(login)} to User with builtInEntity
+    
+    /** Cada sesión está asociada a un evento */
+    SesionCompra{evento(titulo)} to Evento
+}
+
+// ==========================================
+// OPCIONES DE GENERACIÓN
+// ==========================================
+
+/** Generar DTOs con MapStruct para todas las entidades */
+dto * with mapstruct
+
+/** Generar capa de servicio con implementación para todas */
+service * with serviceImpl
+
+/** Paginación para entidades principales */
+paginate Evento, Venta with pagination
+
+/** Filtros JPA para búsquedas avanzadas */
+filter Evento, Venta
