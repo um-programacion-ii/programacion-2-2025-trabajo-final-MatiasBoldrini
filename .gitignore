@@ -1,4 +1,10 @@
 ######################
+# Proxy Service
+######################
+/proxy/target/
+/proxy/.mvn/wrapper/maven-wrapper.jar
+
+######################
 # Node
 ######################
 /node/
