@@ -1,0 +1,60 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: proxy-service
+  
+  # Configuración de Redis de Cátedra
+  data:
+    redis:
+      host: 192.168.194.250
+      port: 6379
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  
+  # Configuración de Kafka de Cátedra
+  kafka:
+    bootstrap-servers: 192.168.194.250:9092
+    consumer:
+      group-id: alumno-matias-boldrini
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: true
+      properties:
+        spring.json.trusted.packages: "*"
+
+# Configuración de la aplicación
+catedra:
+  kafka:
+    topic: eventos-actualizacion
+  redis:
+    key-prefix: evento_
+
+backend:
+  url: http://localhost:8080
+  # TODO: Configurar endpoint específico para notificación
+  # notify-endpoint: /api/eventos/notificar-actualizacion
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.eventos.proxy: DEBUG
+    org.springframework.kafka: INFO
+    org.springframework.data.redis: DEBUG
