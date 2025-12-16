@@ -31,7 +31,7 @@ public class ProxyResource {
      * Obtiene el estado de los asientos de un evento consultando Redis de la
      * cátedra.
      * 
-     * IMPORTANTE: Si no se encuentran datos en Redis, significa que TODOS los
+     * IMPORTANTE: Si no se encuentran datos en Redis, significa que todos los
      * asientos
      * están disponibles.
      * 
@@ -62,12 +62,9 @@ public class ProxyResource {
     }
 
     /**
-     * Endpoint para recibir notificaciones manuales o de prueba.
-     * 
-     * TODO: Este endpoint es opcional. El flujo normal es Kafka → Consumer →
-     * Backend.
-     * Puede usarse para testing o notificaciones manuales.
-     * 
+     * Endpoint auxiliar para recibir notificaciones enviadas directamente al proxy.
+     * El flujo habitual sigue siendo Kafka → Consumer → Backend.
+     *
      * @param mensaje Mensaje de notificación
      * @return Confirmación de recepción
      */
