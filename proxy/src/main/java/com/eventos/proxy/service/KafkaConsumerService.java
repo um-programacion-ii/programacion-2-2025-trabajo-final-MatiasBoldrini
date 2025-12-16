@@ -18,8 +18,8 @@ public class KafkaConsumerService {
     /**
      * Escucha mensajes del tópico eventos-actualizacion.
      * 
-     * TODO: Ajustar el procesamiento según el formato real de los mensajes.
-     * Actualmente recibe el mensaje como String y lo procesa de forma básica.
+     * Recibe el mensaje como String y, por ahora, lo reenvía sin parsear.
+     * Ajustar el procesamiento cuando se confirme el formato definitivo del mensaje.
      * 
      * @param mensaje Mensaje recibido del tópico Kafka
      */
@@ -28,16 +28,20 @@ public class KafkaConsumerService {
         log.info("Mensaje recibido de Kafka: {}", mensaje);
 
         try {
-            // TODO: Parsear el mensaje JSON y extraer los datos relevantes
-            // Por ahora, simplemente notificamos al backend con el mensaje raw
+            // Parsear y mapear el JSON cuando se defina el esquema oficial.
+            // Actualmente se notifica al backend con el payload original.
 
             log.debug("Procesando actualización de evento desde Kafka");
             notificacionService.notificarBackend(mensaje);
 
         } catch (Exception e) {
             log.error("Error al procesar mensaje de Kafka: {}", e.getMessage(), e);
-            // TODO: Implementar estrategia de retry o dead letter queue
+            // Agregar estrategia de reintentos o dead letter queue si el mensaje falla.
         }
     }
 
 }
+
+
+
+

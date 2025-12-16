@@ -7,9 +7,8 @@ import lombok.NoArgsConstructor;
 /**
  * Mensaje recibido del tópico Kafka "eventos-actualizacion".
  * 
- * TODO: Ajustar esta estructura según el formato real de los mensajes de Kafka.
- * Esta es una estructura de ejemplo que debe ser actualizada cuando se conozca
- * el formato exacto de los mensajes.
+ * Estructura de ejemplo; actualizar cuando se conozca el formato real de los
+ * mensajes producidos en Kafka.
  */
 @Data
 @NoArgsConstructor
@@ -38,3 +37,7 @@ public class EventoActualizacion {
     private Object datos;
 
 }
+
+
+
+

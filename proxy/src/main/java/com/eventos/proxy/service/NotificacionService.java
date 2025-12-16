@@ -25,10 +25,8 @@ public class NotificacionService {
     /**
      * Notifica al backend sobre una actualización recibida de Kafka.
      * 
-     * TODO: Definir el endpoint exacto del backend que recibirá estas
-     * notificaciones.
-     * Actualmente usa un endpoint de ejemplo que debe ser implementado en el
-     * backend.
+     * Actualmente usa un endpoint de ejemplo; ajustar la ruta definitiva cuando
+     * el backend exponga el receptor de notificaciones.
      * 
      * @param mensaje Mensaje de actualización recibido de Kafka
      */
@@ -41,11 +39,11 @@ public class NotificacionService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // TODO: Ajustar el cuerpo del request según lo que espere el backend
+            // Ajustar el cuerpo del request según el contrato que defina el backend.
             HttpEntity<String> request = new HttpEntity<>(mensaje, headers);
 
-            // Por ahora solo logueamos, el endpoint del backend no existe aún
-            log.info("TODO: Enviar notificación al backend - Endpoint: {} - Mensaje: {}", endpoint, mensaje);
+            // Por ahora solo se registra, el endpoint del backend no existe aún
+            log.info("Notificación pendiente de envío al backend - Endpoint: {} - Mensaje: {}", endpoint, mensaje);
 
             // Descomentar cuando el endpoint del backend esté listo:
             // restTemplate.postForEntity(endpoint, request, String.class);
@@ -53,8 +51,12 @@ public class NotificacionService {
 
         } catch (Exception e) {
             log.error("Error al notificar al backend: {}", e.getMessage(), e);
-            // TODO: Implementar retry logic
+            // Agregar lógica de reintentos cuando el canal esté operativo.
         }
     }
 
 }
+
+
+
+

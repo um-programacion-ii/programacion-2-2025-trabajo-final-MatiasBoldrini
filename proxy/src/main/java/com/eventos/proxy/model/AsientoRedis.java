@@ -39,3 +39,6 @@ public class AsientoRedis {
     private String expira;
 
 }
+
+
+

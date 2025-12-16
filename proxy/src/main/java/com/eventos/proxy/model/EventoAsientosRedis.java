@@ -25,3 +25,6 @@ public class EventoAsientosRedis {
     private List<AsientoRedis> asientos;
 
 }
+
+
+
