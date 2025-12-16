@@ -38,7 +38,7 @@ catedra:
 
 backend:
   url: http://localhost:8080
-  # TODO: Configurar endpoint específico para notificación
+  # Endpoint de notificación (definir cuando el backend lo exponga)
   # notify-endpoint: /api/eventos/notificar-actualizacion
 
 # Actuator endpoints
@@ -58,3 +58,7 @@ logging:
     com.eventos.proxy: DEBUG
     org.springframework.kafka: INFO
     org.springframework.data.redis: DEBUG
+
+
+
+
