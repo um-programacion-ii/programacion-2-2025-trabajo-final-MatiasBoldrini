@@ -55,9 +55,19 @@ public final class SecurityUtils {
      */
     public static Optional<String> getCurrentUserJWT() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
-        return Optional.ofNullable(securityContext.getAuthentication())
-            .filter(authentication -> authentication.getCredentials() instanceof String)
-            .map(authentication -> (String) authentication.getCredentials());
+        Authentication authentication = securityContext.getAuthentication();
+        if (authentication == null) {
+            return Optional.empty();
+        }
+        // Cuando se usa OAuth2 Resource Server, el principal es Jwt
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
+            return Optional.of(jwt.getTokenValue());
+        }
+        // Fallback legacy: credentials como String
+        if (authentication.getCredentials() instanceof String creds) {
+            return Optional.of(creds);
+        }
+        return Optional.empty();
     }
 
     /**

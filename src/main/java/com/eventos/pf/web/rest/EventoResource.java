@@ -5,6 +5,9 @@ import com.eventos.pf.service.EventoQueryService;
 import com.eventos.pf.service.EventoService;
 import com.eventos.pf.service.criteria.EventoCriteria;
 import com.eventos.pf.service.dto.EventoDTO;
+import com.eventos.pf.service.proxy.ProxyClientService;
+import com.eventos.pf.service.proxy.dto.EventoAsientosDTO;
+import com.eventos.pf.security.SecurityUtils;
 import com.eventos.pf.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -19,9 +22,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.server.ResponseStatusException;
 import tech.jhipster.web.util.HeaderUtil;
 import tech.jhipster.web.util.PaginationUtil;
 import tech.jhipster.web.util.ResponseUtil;
@@ -46,10 +51,18 @@ public class EventoResource {
 
     private final EventoQueryService eventoQueryService;
 
-    public EventoResource(EventoService eventoService, EventoRepository eventoRepository, EventoQueryService eventoQueryService) {
+    private final ProxyClientService proxyClientService;
+
+    public EventoResource(
+        EventoService eventoService,
+        EventoRepository eventoRepository,
+        EventoQueryService eventoQueryService,
+        ProxyClientService proxyClientService
+    ) {
         this.eventoService = eventoService;
         this.eventoRepository = eventoRepository;
         this.eventoQueryService = eventoQueryService;
+        this.proxyClientService = proxyClientService;
     }
 
     /**
@@ -182,6 +195,32 @@ public class EventoResource {
         LOG.debug("REST request to get Evento : {}", id);
         Optional<EventoDTO> eventoDTO = eventoService.findOne(id);
         return ResponseUtil.wrapOrNotFound(eventoDTO);
+    }
+
+    /**
+     * {@code GET /eventos/:id/asientos} : obtiene el estado de asientos (bloqueados/vendidos) desde Redis de cátedra
+     * a través del proxy.
+     *
+     * Regla crítica: todo asiento que NO figura en Redis debe considerarse DISPONIBLE.
+     *
+     * @param id el id del evento local
+     * @return 200 con la lista de asientos ocupados (puede ser vacía)
+     */
+    @GetMapping("/{id}/asientos")
+    public ResponseEntity<EventoAsientosDTO> getAsientos(@PathVariable("id") Long id) {
+        LOG.debug("REST request to get asientos for Evento : {}", id);
+
+        EventoDTO eventoDTO = eventoService.findOne(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        Long eventoIdCatedra = eventoDTO.getEventoIdCatedra();
+        if (eventoIdCatedra == null || eventoIdCatedra <= 0) {
+            throw new BadRequestAlertException("Evento sin eventoIdCatedra", ENTITY_NAME, "eventoidcatedra");
+        }
+
+        String jwt = SecurityUtils.getCurrentUserJWT().orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+        EventoAsientosDTO asientos = proxyClientService.obtenerAsientos(eventoIdCatedra, jwt);
+        return ResponseEntity.ok(asientos);
     }
 
     /**

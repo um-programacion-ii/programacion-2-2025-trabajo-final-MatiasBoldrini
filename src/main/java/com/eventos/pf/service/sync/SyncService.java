@@ -62,8 +62,8 @@ public class SyncService {
                 }
 
                 Optional<Evento> existente = eventoRepository.findByEventoIdCatedra(dto.getId());
-                if (existente.isPresent()) {
-                    Evento evento = existente.get();
+                Evento evento = existente.orElse(null);
+                if (evento != null) {
                     boolean cambios = aplicarDatosSiCambio(evento, dto);
                     if (cambios) {
                         evento.setUltimaActualizacion(Instant.now());
