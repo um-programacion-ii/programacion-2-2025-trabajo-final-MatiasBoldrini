@@ -1,4 +1,4 @@
-package com.eventos.pf.web.rest;
+ package com.eventos.pf.web.rest;
 
 import static com.eventos.pf.domain.EventoAsserts.*;
 import static com.eventos.pf.web.rest.TestUtil.createUpdateProxyForBean;
@@ -15,6 +15,9 @@ import com.eventos.pf.domain.Integrante;
 import com.eventos.pf.domain.enumeration.EventoEstado;
 import com.eventos.pf.repository.EventoRepository;
 import com.eventos.pf.service.EventoService;
+import com.eventos.pf.service.proxy.ProxyClientService;
+import com.eventos.pf.service.proxy.dto.AsientoRedisDTO;
+import com.eventos.pf.service.proxy.dto.EventoAsientosDTO;
 import com.eventos.pf.service.dto.EventoDTO;
 import com.eventos.pf.service.mapper.EventoMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +37,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
@@ -100,6 +105,7 @@ class EventoResourceIT {
 
     private static final String ENTITY_API_URL = "/api/eventos";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
+    private static final String ENTITY_API_URL_ASIENTOS = ENTITY_API_URL + "/{id}/asientos";
 
     private static Random random = new Random();
     private static AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
@@ -124,6 +130,9 @@ class EventoResourceIT {
 
     @Autowired
     private MockMvc restEventoMockMvc;
+
+    @MockBean
+    private ProxyClientService proxyClientService;
 
     private Evento evento;
 
@@ -190,6 +199,45 @@ class EventoResourceIT {
             eventoRepository.delete(insertedEvento);
             insertedEvento = null;
         }
+    }
+
+    @Test
+    @Transactional
+    void getAsientosDevuelveListaVaciaCuandoProxyNoTieneDatos() throws Exception {
+        insertedEvento = eventoRepository.saveAndFlush(evento);
+
+        when(proxyClientService.obtenerAsientos(DEFAULT_EVENTO_ID_CATEDRA, "password")).thenReturn(new EventoAsientosDTO(List.of()));
+
+        restEventoMockMvc
+            .perform(get(ENTITY_API_URL_ASIENTOS, insertedEvento.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.asientos").isArray())
+            .andExpect(jsonPath("$.asientos").isEmpty());
+    }
+
+    @Test
+    @Transactional
+    void getAsientosDevuelveAsientosCuandoProxyDevuelveDatos() throws Exception {
+        insertedEvento = eventoRepository.saveAndFlush(evento);
+
+        AsientoRedisDTO asiento = new AsientoRedisDTO();
+        asiento.setFila(2);
+        asiento.setColumna(3);
+        asiento.setEstado("Bloqueado");
+        asiento.setExpira(Instant.now().plusSeconds(300));
+
+        when(proxyClientService.obtenerAsientos(DEFAULT_EVENTO_ID_CATEDRA, "password")).thenReturn(new EventoAsientosDTO(List.of(asiento)));
+
+        restEventoMockMvc
+            .perform(get(ENTITY_API_URL_ASIENTOS, insertedEvento.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.asientos").isArray())
+            .andExpect(jsonPath("$.asientos[0].fila").value(2))
+            .andExpect(jsonPath("$.asientos[0].columna").value(3))
+            .andExpect(jsonPath("$.asientos[0].estado").value("Bloqueado"))
+            .andExpect(jsonPath("$.asientos[0].expira").exists());
     }
 
     @Test
