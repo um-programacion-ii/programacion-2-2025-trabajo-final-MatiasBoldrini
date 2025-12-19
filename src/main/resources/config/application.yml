@@ -225,3 +225,8 @@ jhipster:
 # ===================================================================
 
 # application:
+
+catedra:
+  api:
+    url: ${CATEDRA_API_URL:http://192.168.194.250:8080}
+    token: ${CATEDRA_TOKEN:}
