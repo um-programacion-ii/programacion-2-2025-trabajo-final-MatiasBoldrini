@@ -1,6 +1,7 @@
 package com.eventos.pf.repository;
 
 import com.eventos.pf.domain.Integrante;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
@@ -9,4 +10,6 @@ import org.springframework.stereotype.Repository;
  */
 @SuppressWarnings("unused")
 @Repository
-public interface IntegranteRepository extends JpaRepository<Integrante, Long> {}
+public interface IntegranteRepository extends JpaRepository<Integrante, Long> {
+    Optional<Integrante> findOneByNombreAndApellidoAndIdentificacion(String nombre, String apellido, String identificacion);
+}

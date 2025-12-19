@@ -1,6 +1,7 @@
 package com.eventos.pf.repository;
 
 import com.eventos.pf.domain.Evento;
+import com.eventos.pf.domain.enumeration.EventoEstado;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EventoRepository
     extends EventoRepositoryWithBagRelationships, JpaRepository<Evento, Long>, JpaSpecificationExecutor<Evento> {
+    Optional<Evento> findByEventoIdCatedra(Long eventoIdCatedra);
+
+    List<Evento> findByEstadoNot(EventoEstado estado);
+
     default Optional<Evento> findOneWithEagerRelationships(Long id) {
         return this.fetchBagRelationships(this.findById(id));
     }
