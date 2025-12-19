@@ -62,7 +62,7 @@ public class KafkaConsumerService {
             // Actualmente se notifica al backend con el payload original.
 
             log.debug("Procesando actualización de evento desde Kafka");
-            notificacionService.notificarBackend(mensaje);
+            notificacionService.notificarBackend(mensaje, record.offset());
 
         } catch (Exception e) {
             log.error("Error al procesar mensaje de Kafka: {}", e.getMessage(), e);
