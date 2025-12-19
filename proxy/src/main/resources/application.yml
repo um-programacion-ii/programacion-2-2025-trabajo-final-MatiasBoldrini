@@ -33,6 +33,9 @@ spring:
 catedra:
   kafka:
     topic: eventos-actualizacion
+    # Habilitar captura de muestras para análisis de esquema
+    capture-samples: true
+    samples-dir: logs/kafka-samples
   redis:
     key-prefix: evento_
 
