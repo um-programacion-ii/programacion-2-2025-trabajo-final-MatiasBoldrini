@@ -33,6 +33,7 @@ spring:
 catedra:
   kafka:
     topic: eventos-actualizacion
+    debounce-seconds: 10
     # Habilitar captura de muestras para análisis de esquema
     capture-samples: true
     samples-dir: logs/kafka-samples
@@ -41,8 +42,15 @@ catedra:
 
 backend:
   url: http://localhost:8080
+  auth:
+    username: ${BACKEND_SERVICE_USER:admin}
+    password: ${BACKEND_SERVICE_PASSWORD:admin}
   # Endpoint de notificación (definir cuando el backend lo exponga)
   # notify-endpoint: /api/eventos/notificar-actualizacion
+  jwt:
+    # Seguridad: el Proxy valida JWT emitidos por el Backend (JHipster HS512).
+    # Reutiliza el mismo secreto base64.
+    base64-secret: ${JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET:OTI3NDIyZjAwY2M5MmE3NmFmYmUzMGZmYmU4ODcwZDk4NTUyNzY0OWE0NDY3ZTcxMjQyMDQxYzYyZmMwYzkwNTQyZmQzYmRkMTBlZWMwMjdiZjZmYzcyMjc0ZDUzNDQ0MzdjMzMwZDkxNTA5MDJkMDE4MTEyYTZhMDNmN2VlNGE=}
 
 # Actuator endpoints
 management:
