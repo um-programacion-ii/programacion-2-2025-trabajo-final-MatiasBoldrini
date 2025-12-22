@@ -22,6 +22,11 @@ public interface SesionCompraRepository extends JpaRepository<SesionCompra, Long
      */
     Optional<SesionCompra> findFirstByUsuarioLoginAndActivaIsTrueOrderByFechaCreacionDesc(String login);
 
+    /**
+     * Todas las sesiones activas para un usuario (para cerrar huérfanas).
+     */
+    List<SesionCompra> findByUsuarioLoginAndActivaIsTrue(String login);
+
     default Optional<SesionCompra> findOneWithEagerRelationships(Long id) {
         return this.findOneWithToOneRelationships(id);
     }

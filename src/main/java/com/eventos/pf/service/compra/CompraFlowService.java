@@ -39,8 +39,10 @@ import org.springframework.web.server.ResponseStatusException;
 /**
  * Orquestación del flujo de compra.
  *
- * Regla de consigna: la sesión activa debe vivir en Redis local con TTL por inactividad.
- * La entidad {@link SesionCompra} se mantiene en DB para tener un id estable/auditoría.
+ * Regla de consigna: la sesión activa debe vivir en Redis local con TTL por
+ * inactividad.
+ * La entidad {@link SesionCompra} se mantiene en DB para tener un id
+ * estable/auditoría.
  */
 @Service
 @Transactional
@@ -62,15 +64,14 @@ public class CompraFlowService {
     private final ObjectMapper objectMapper;
 
     public CompraFlowService(
-        SesionCompraRepository sesionCompraRepository,
-        EventoRepository eventoRepository,
-        UserRepository userRepository,
-        VentaRepository ventaRepository,
-        VentaAsientoRepository ventaAsientoRepository,
-        ProxyClientService proxyClientService,
-        CompraSesionStore compraSesionStore,
-        ObjectMapper objectMapper
-    ) {
+            SesionCompraRepository sesionCompraRepository,
+            EventoRepository eventoRepository,
+            UserRepository userRepository,
+            VentaRepository ventaRepository,
+            VentaAsientoRepository ventaAsientoRepository,
+            ProxyClientService proxyClientService,
+            CompraSesionStore compraSesionStore,
+            ObjectMapper objectMapper) {
         this.sesionCompraRepository = sesionCompraRepository;
         this.eventoRepository = eventoRepository;
         this.userRepository = userRepository;
@@ -87,30 +88,42 @@ public class CompraFlowService {
         }
         String login = requireLogin(userLogin);
 
-        Evento evento = eventoRepository.findById(eventoIdLocal).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        Evento evento = eventoRepository.findById(eventoIdLocal)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (evento.getEventoIdCatedra() == null || evento.getEventoIdCatedra() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Evento sin eventoIdCatedra");
         }
 
-        Optional<SesionCompra> activa = findSesionActiva(login);
-        if (activa.isPresent()) {
-            SesionCompra s = activa.get();
-            if (s.getEvento() != null && s.getEvento().getId() != null && s.getEvento().getId().equals(eventoIdLocal)) {
-                // Retomar misma sesión (mismo evento)
-                return ensureRedisStateFromDb(login, s);
+        // Redis es la fuente de verdad: revisar primero si hay sesión en Redis
+        Optional<CompraSesionState> redisState = compraSesionStore.get(login);
+        if (redisState.isPresent()) {
+            CompraSesionState state = redisState.get();
+            if (state.getEventoIdLocal() != null && state.getEventoIdLocal().equals(eventoIdLocal)) {
+                // Retomar misma sesión (mismo evento) y tocar TTL
+                compraSesionStore.save(login, state);
+                return state;
             }
-            // Evento distinto: cerrar anterior y crear nueva
-            cerrarSesionDbYRedis(login, s);
+            // Evento distinto: cerrar sesión actual (DB+Redis) y crear nueva
+            if (state.getSesionId() != null) {
+                sesionCompraRepository.findById(state.getSesionId()).ifPresent(s -> cerrarSesionDbYRedis(login, s));
+            } else {
+                compraSesionStore.delete(login);
+            }
+        } else {
+            // No hay sesión en Redis: cerrar cualquier sesión activa huérfana en DB
+            cerrarSesionesHuerfanasDb(login);
         }
 
-        User user = userRepository.findOneByLogin(login).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        // Crear nueva sesión
+        User user = userRepository.findOneByLogin(login)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
         SesionCompra nueva = new SesionCompra()
-            .activa(true)
-            .pasoActual(PASO_INICIADA)
-            .fechaCreacion(Instant.now())
-            .fechaExpiracion(null)
-            .usuario(user)
-            .evento(evento);
+                .activa(true)
+                .pasoActual(PASO_INICIADA)
+                .fechaCreacion(Instant.now())
+                .fechaExpiracion(null)
+                .usuario(user)
+                .evento(evento);
         nueva = sesionCompraRepository.save(nueva);
 
         CompraSesionState state = new CompraSesionState();
@@ -124,7 +137,8 @@ public class CompraFlowService {
         return state;
     }
 
-    public CompraSesionState seleccionarAsientos(Long sesionId, List<AsientoSeleccion> asientos, String userLogin, String jwt) {
+    public CompraSesionState seleccionarAsientos(Long sesionId, List<AsientoSeleccion> asientos, String userLogin,
+            String jwt) {
         String login = requireLogin(userLogin);
         if (sesionId == null || sesionId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "sesionId inválido");
@@ -141,7 +155,13 @@ public class CompraFlowService {
 
         CompraSesionState state = requireSesionActivaRedis(login, sesionId);
         SesionCompra sesionDb = requireSesionCompraDbOwned(sesionId, login);
-        validarTransicion(sesionDb.getPasoActual(), PASO_ASIENTOS_SELECCIONADOS, true);
+
+        // Permitir seleccionar desde pasos 1..4 (retroceso desde nombres cargados)
+        int pasoActual = sesionDb.getPasoActual() == null ? PASO_INICIADA : sesionDb.getPasoActual();
+        if (pasoActual < PASO_INICIADA || pasoActual > PASO_NOMBRES_CARGADOS) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede seleccionar asientos desde el paso actual");
+        }
 
         Evento evento = sesionDb.getEvento();
         if (evento == null) {
@@ -154,19 +174,21 @@ public class CompraFlowService {
         for (AsientoSeleccion a : asientos) {
             if (ocupados.estaOcupado(a.getFila(), a.getColumna())) {
                 throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Asiento no disponible (fila=" + a.getFila() + ", columna=" + a.getColumna() + ")"
-                );
+                        HttpStatus.CONFLICT,
+                        "Asiento no disponible (fila=" + a.getFila() + ", columna=" + a.getColumna() + ")");
             }
         }
 
         String json = writeJson(asientos);
         sesionDb.setAsientosSeleccionados(json);
         sesionDb.setPasoActual(PASO_ASIENTOS_SELECCIONADOS);
+        // Limpiar nombres al cambiar selección (volver atrás)
+        sesionDb.setDatosPersonas(null);
         sesionCompraRepository.save(sesionDb);
 
         state.setPasoActual(PASO_ASIENTOS_SELECCIONADOS);
         state.setAsientosSeleccionadosJson(json);
+        state.setDatosPersonasJson(null);
         compraSesionStore.save(login, state);
         return state;
     }
@@ -182,7 +204,13 @@ public class CompraFlowService {
 
         CompraSesionState state = requireSesionActivaRedis(login, sesionId);
         SesionCompra sesionDb = requireSesionCompraDbOwned(sesionId, login);
-        validarTransicion(sesionDb.getPasoActual(), PASO_ASIENTOS_BLOQUEADOS, true);
+
+        // Permitir bloquear desde pasos 2..4 (asientos seleccionados, bloqueados o
+        // nombres cargados)
+        int pasoActual = sesionDb.getPasoActual() == null ? PASO_INICIADA : sesionDb.getPasoActual();
+        if (pasoActual < PASO_ASIENTOS_SELECCIONADOS || pasoActual > PASO_NOMBRES_CARGADOS) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Debe seleccionar asientos antes de bloquear");
+        }
 
         List<AsientoSeleccion> seleccionados = readAsientosSeleccionados(sesionDb.getAsientosSeleccionados());
         if (seleccionados.isEmpty()) {
@@ -224,14 +252,20 @@ public class CompraFlowService {
 
         CompraSesionState state = requireSesionActivaRedis(login, sesionId);
         SesionCompra sesionDb = requireSesionCompraDbOwned(sesionId, login);
-        validarTransicion(sesionDb.getPasoActual(), PASO_NOMBRES_CARGADOS, true);
+
+        // Permitir cargar nombres desde pasos 3..4 (bloqueados o nombres ya cargados)
+        int pasoActual = sesionDb.getPasoActual() == null ? PASO_INICIADA : sesionDb.getPasoActual();
+        if (pasoActual < PASO_ASIENTOS_BLOQUEADOS || pasoActual > PASO_NOMBRES_CARGADOS) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Debe bloquear asientos antes de cargar nombres");
+        }
 
         List<AsientoSeleccion> seleccionados = readAsientosSeleccionados(sesionDb.getAsientosSeleccionados());
         if (seleccionados.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay asientos seleccionados");
         }
         if (asientosPersonas.size() != seleccionados.size()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La cantidad de personas no coincide con la selección");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La cantidad de personas no coincide con la selección");
         }
 
         validarPersonasCoincidenConSeleccion(seleccionados, asientosPersonas);
@@ -278,9 +312,9 @@ public class CompraFlowService {
         for (AsientoPersona a : asientosPersonas) {
             if (!estaBloqueadoVigente(redisAsientos, a.getFila(), a.getColumna())) {
                 throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "No hay bloqueo activo para el asiento (fila=" + a.getFila() + ", columna=" + a.getColumna() + ")"
-                );
+                        HttpStatus.CONFLICT,
+                        "No hay bloqueo activo para el asiento (fila=" + a.getFila() + ", columna=" + a.getColumna()
+                                + ")");
             }
         }
 
@@ -291,7 +325,8 @@ public class CompraFlowService {
         req.setEventoId(eventoIdCatedra);
         req.setFecha(Instant.now());
         req.setPrecioVenta(precioVenta);
-        req.setAsientos(asientosPersonas.stream().map(a -> new AsientoVentaDTO(a.getFila(), a.getColumna(), a.getPersona())).toList());
+        req.setAsientos(asientosPersonas.stream()
+                .map(a -> new AsientoVentaDTO(a.getFila(), a.getColumna(), a.getPersona())).toList());
 
         RealizarVentaResponse resp = proxyClientService.realizarVenta(req, jwt);
         if (resp == null || resp.getResultado() == null) {
@@ -300,7 +335,8 @@ public class CompraFlowService {
 
         Venta venta = new Venta();
         venta.setEvento(evento);
-        venta.setUsuario(userRepository.findOneByLogin(login).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED)));
+        venta.setUsuario(userRepository.findOneByLogin(login)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED)));
         venta.setFechaVenta(resp.getFechaVenta() == null ? Instant.now() : resp.getFechaVenta());
         venta.setPrecioVenta(resp.getPrecioVenta() == null ? precioVenta : resp.getPrecioVenta());
         venta.setResultado(resp.getResultado());
@@ -320,7 +356,8 @@ public class CompraFlowService {
             }
         }
 
-        // Si fue exitosa, cerrar sesión; si falla, mantenerla para reintentar (sin borrar Redis)
+        // Si fue exitosa, cerrar sesión; si falla, mantenerla para reintentar (sin
+        // borrar Redis)
         if (Boolean.TRUE.equals(resp.getResultado())) {
             sesionDb.setPasoActual(PASO_CONFIRMADA);
             sesionDb.setActiva(false);
@@ -339,7 +376,12 @@ public class CompraFlowService {
     @Transactional(readOnly = true)
     public Optional<CompraSesionState> getSesionActual(String userLogin) {
         String login = requireLogin(userLogin);
-        return compraSesionStore.get(login);
+        Optional<CompraSesionState> redisState = compraSesionStore.get(login);
+        if (redisState.isEmpty()) {
+            // Redis no tiene sesión: cerrar cualquier sesión activa huérfana en DB
+            cerrarSesionesHuerfanasDb(login);
+        }
+        return redisState;
     }
 
     public void cerrarSesionActual(String userLogin) {
@@ -360,31 +402,26 @@ public class CompraFlowService {
         compraSesionStore.delete(login);
     }
 
-    private Optional<SesionCompra> findSesionActiva(String login) {
-        return sesionCompraRepository.findFirstByUsuarioLoginAndActivaIsTrueOrderByFechaCreacionDesc(login);
-    }
-
-    private CompraSesionState ensureRedisStateFromDb(String login, SesionCompra sesionDb) {
-        Optional<CompraSesionState> existing = compraSesionStore.get(login);
-        if (existing.isPresent() && sesionDb.getId() != null && sesionDb.getId().equals(existing.get().getSesionId())) {
-            // Touch TTL
-            compraSesionStore.save(login, existing.get());
-            return existing.get();
+    /**
+     * Cierra todas las sesiones activas en DB para el usuario dado.
+     * Se llama cuando Redis no tiene sesión activa, para que DB refleje la realidad
+     * (TTL expirado).
+     */
+    private void cerrarSesionesHuerfanasDb(String login) {
+        List<SesionCompra> activas = sesionCompraRepository.findByUsuarioLoginAndActivaIsTrue(login);
+        if (!activas.isEmpty()) {
+            Instant ahora = Instant.now();
+            for (SesionCompra s : activas) {
+                s.setActiva(false);
+                s.setFechaExpiracion(ahora);
+            }
+            sesionCompraRepository.saveAll(activas);
         }
-
-        CompraSesionState state = new CompraSesionState();
-        state.setSesionId(sesionDb.getId());
-        state.setEventoIdLocal(sesionDb.getEvento() == null ? null : sesionDb.getEvento().getId());
-        state.setEventoIdCatedra(sesionDb.getEvento() == null ? null : sesionDb.getEvento().getEventoIdCatedra());
-        state.setPasoActual(sesionDb.getPasoActual());
-        state.setAsientosSeleccionadosJson(sesionDb.getAsientosSeleccionados());
-        state.setDatosPersonasJson(sesionDb.getDatosPersonas());
-        compraSesionStore.save(login, state);
-        return state;
     }
 
     private CompraSesionState requireSesionActivaRedis(String login, Long sesionId) {
-        CompraSesionState state = compraSesionStore.get(login).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay sesión activa"));
+        CompraSesionState state = compraSesionStore.get(login)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay sesión activa"));
         if (state.getSesionId() == null || !state.getSesionId().equals(sesionId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "La sesión activa no coincide con sesionId");
         }
@@ -392,7 +429,8 @@ public class CompraFlowService {
     }
 
     private SesionCompra requireSesionCompraDbOwned(Long sesionId, String login) {
-        SesionCompra s = sesionCompraRepository.findById(sesionId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        SesionCompra s = sesionCompraRepository.findById(sesionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (s.getUsuario() == null || s.getUsuario().getLogin() == null || !s.getUsuario().getLogin().equals(login)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La sesión no pertenece al usuario");
         }
@@ -400,20 +438,6 @@ public class CompraFlowService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "La sesión no está activa");
         }
         return s;
-    }
-
-    private void validarTransicion(Integer pasoActual, int pasoObjetivo, boolean allowRepeat) {
-        int actual = pasoActual == null ? PASO_INICIADA : pasoActual;
-        if (allowRepeat && actual == pasoObjetivo) {
-            return;
-        }
-        // no permitir saltar hacia adelante más de 1 (o llegar a un paso anterior)
-        if (pasoObjetivo < actual) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede retroceder de paso");
-        }
-        if (pasoObjetivo > actual + 1) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede saltear pasos");
-        }
     }
 
     private void validarCoordenadasEnEvento(List<AsientoSeleccion> asientos, Evento evento) {
@@ -446,7 +470,8 @@ public class CompraFlowService {
         }
     }
 
-    private void validarPersonasCoincidenConSeleccion(List<AsientoSeleccion> seleccionados, List<AsientoPersona> personas) {
+    private void validarPersonasCoincidenConSeleccion(List<AsientoSeleccion> seleccionados,
+            List<AsientoPersona> personas) {
         Set<String> sel = new HashSet<>(seleccionados.stream().map(a -> a.getFila() + ":" + a.getColumna()).toList());
         Set<String> seen = new HashSet<>();
         for (AsientoPersona p : personas) {
@@ -502,7 +527,8 @@ public class CompraFlowService {
             return List.of();
         }
         try {
-            return objectMapper.readValue(json, new TypeReference<List<AsientoSeleccion>>() {});
+            return objectMapper.readValue(json, new TypeReference<List<AsientoSeleccion>>() {
+            });
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON inválido de asientosSeleccionados", e);
         }
@@ -513,7 +539,8 @@ public class CompraFlowService {
             return List.of();
         }
         try {
-            return objectMapper.readValue(json, new TypeReference<List<AsientoPersona>>() {});
+            return objectMapper.readValue(json, new TypeReference<List<AsientoPersona>>() {
+            });
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON inválido de datosPersonas", e);
         }
@@ -534,7 +561,6 @@ public class CompraFlowService {
         return userLogin;
     }
 
-    public record ConfirmarCompraResult(Long ventaIdLocal, RealizarVentaResponse ventaCatedra) {}
+    public record ConfirmarCompraResult(Long ventaIdLocal, RealizarVentaResponse ventaCatedra) {
+    }
 }
-
-
