@@ -8,8 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
+
+import static org.springframework.http.HttpStatus.BAD_GATEWAY;
+import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 
 /**
  * Servicio para consultar el estado de asientos en Redis de la cátedra.
@@ -52,11 +56,13 @@ public class RedisService {
             return Optional.of(asientos);
 
         } catch (JsonProcessingException e) {
+            // Si Redis devolvió algo pero el JSON es inválido, NO podemos asumir “todo disponible”.
             log.error("Error al parsear JSON de Redis para evento {}: {}", eventoId, e.getMessage());
-            return Optional.empty();
+            throw new ResponseStatusException(BAD_GATEWAY, "Redis devolvió datos inválidos", e);
         } catch (Exception e) {
+            // Si Redis no está disponible (timeout/red), NO podemos devolver 204 porque sería asumir disponibilidad.
             log.error("Error al consultar Redis para evento {}: {}", eventoId, e.getMessage());
-            return Optional.empty();
+            throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Redis de cátedra no disponible", e);
         }
     }
 
@@ -77,6 +83,11 @@ public class RedisService {
     }
 
 }
+
+
+
+
+
 
 
 
