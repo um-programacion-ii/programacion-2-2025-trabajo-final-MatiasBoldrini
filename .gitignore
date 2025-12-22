@@ -179,3 +179,19 @@ coverage/
 !README.md
 !**/README.md
 *ignore
+
+######################
+# Local runtime artifacts (no subir)
+######################
+*.pid
+/proxy/logs/
+
+######################
+# Documentación/planes locales (no subir)
+######################
+/proyect/
+
+######################
+# Postman collections (no subir)
+######################
+*postman_collection.json
