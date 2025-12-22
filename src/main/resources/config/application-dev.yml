@@ -55,6 +55,10 @@ spring:
     cache-duration: PT1S # 1 second, see the ISO 8601 standard
   thymeleaf:
     cache: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 server:
   port: 8080
@@ -109,3 +113,7 @@ jhipster:
 
 proxy:
   url: http://localhost:8081
+
+application:
+  compra:
+    sesion-ttl: PT30M
