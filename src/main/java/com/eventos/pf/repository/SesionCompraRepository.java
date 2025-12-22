@@ -17,6 +17,11 @@ public interface SesionCompraRepository extends JpaRepository<SesionCompra, Long
     @Query("select sesionCompra from SesionCompra sesionCompra where sesionCompra.usuario.login = ?#{authentication.name}")
     List<SesionCompra> findByUsuarioIsCurrentUser();
 
+    /**
+     * Última sesión activa para un usuario (para retomar flujo).
+     */
+    Optional<SesionCompra> findFirstByUsuarioLoginAndActivaIsTrueOrderByFechaCreacionDesc(String login);
+
     default Optional<SesionCompra> findOneWithEagerRelationships(Long id) {
         return this.findOneWithToOneRelationships(id);
     }
