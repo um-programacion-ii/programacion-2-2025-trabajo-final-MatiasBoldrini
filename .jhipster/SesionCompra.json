@@ -1,0 +1,58 @@
+{
+  "annotations": {
+    "changelogDate": "20251214234112"
+  },
+  "applications": "*",
+  "documentation": "Sesión de compra del usuario\\n\\nPermite recuperar el estado de compra si el usuario cambia de dispositivo.\\nLos campos asientosSeleccionados y datosPersonas almacenan JSON.",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "pasoActual",
+      "fieldType": "Integer",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "asientosSeleccionados",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "datosPersonas",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "fechaCreacion",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "fechaExpiracion",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "activa",
+      "fieldType": "Boolean",
+      "fieldValidateRules": ["required"]
+    }
+  ],
+  "name": "SesionCompra",
+  "relationships": [
+    {
+      "documentation": "Cada sesión pertenece a un usuario",
+      "otherEntityField": "login",
+      "otherEntityName": "user",
+      "relationshipName": "usuario",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one",
+      "relationshipWithBuiltInEntity": true
+    },
+    {
+      "documentation": "Cada sesión está asociada a un evento",
+      "otherEntityField": "titulo",
+      "otherEntityName": "evento",
+      "relationshipName": "evento",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceImpl"
+}

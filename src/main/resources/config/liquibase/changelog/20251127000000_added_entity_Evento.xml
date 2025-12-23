@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Tabla Evento -->
+    <changeSet id="20251127000000-1" author="jhipster">
+        <createTable tableName="evento">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="evento_id_catedra" type="bigint">
+                <constraints unique="true" nullable="true"/>
+            </column>
+            <column name="titulo" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="resumen" type="varchar(500)"/>
+            <column name="descripcion" type="text"/>
+            <column name="fecha" type="${datetimeType}"/>
+            <column name="direccion" type="varchar(500)"/>
+            <column name="imagen" type="varchar(500)"/>
+            <column name="fila_asientos" type="integer"/>
+            <column name="columna_asientos" type="integer"/>
+            <column name="precio_entrada" type="decimal(21,2)"/>
+            <column name="evento_tipo" type="varchar(100)"/>
+            <column name="organizador_nombre" type="varchar(100)"/>
+            <column name="organizador_apellido" type="varchar(100)"/>
+            <column name="estado" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ultima_actualizacion" type="${datetimeType}"/>
+            <column name="created_by" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Tabla Integrante -->
+    <changeSet id="20251127000000-2" author="jhipster">
+        <createTable tableName="integrante">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="nombre" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="apellido" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="identificacion" type="varchar(100)"/>
+            <column name="evento_id" type="bigint"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="integrante"
+            baseColumnNames="evento_id"
+            constraintName="fk_integrante_evento_id"
+            referencedTableName="evento"
+            referencedColumnNames="id"/>
+    </changeSet>
+
+    <!-- Tabla SesionCompra -->
+    <changeSet id="20251127000000-3" author="jhipster">
+        <createTable tableName="sesion_compra">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="usuario_id" type="bigint"/>
+            <column name="evento_id" type="bigint"/>
+            <column name="paso_actual" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="asientos_seleccionados" type="text"/>
+            <column name="datos_personas" type="text"/>
+            <column name="fecha_creacion" type="${datetimeType}"/>
+            <column name="fecha_expiracion" type="${datetimeType}"/>
+            <column name="activa" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="sesion_compra"
+            baseColumnNames="usuario_id"
+            constraintName="fk_sesion_compra_usuario_id"
+            referencedTableName="jhi_user"
+            referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+            baseTableName="sesion_compra"
+            baseColumnNames="evento_id"
+            constraintName="fk_sesion_compra_evento_id"
+            referencedTableName="evento"
+            referencedColumnNames="id"/>
+    </changeSet>
+
+    <!-- Tabla Venta -->
+    <changeSet id="20251127000000-4" author="jhipster">
+        <createTable tableName="venta">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="venta_id_catedra" type="bigint"/>
+            <column name="usuario_id" type="bigint"/>
+            <column name="evento_id" type="bigint"/>
+            <column name="fecha_venta" type="${datetimeType}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="precio_venta" type="decimal(21,2)"/>
+            <column name="resultado" type="boolean"/>
+            <column name="descripcion" type="varchar(500)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="venta"
+            baseColumnNames="usuario_id"
+            constraintName="fk_venta_usuario_id"
+            referencedTableName="jhi_user"
+            referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+            baseTableName="venta"
+            baseColumnNames="evento_id"
+            constraintName="fk_venta_evento_id"
+            referencedTableName="evento"
+            referencedColumnNames="id"/>
+    </changeSet>
+
+    <!-- Tabla VentaAsiento -->
+    <changeSet id="20251127000000-5" author="jhipster">
+        <createTable tableName="venta_asiento">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="venta_id" type="bigint"/>
+            <column name="fila" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="columna" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="persona" type="varchar(200)"/>
+            <column name="estado" type="varchar(50)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="venta_asiento"
+            baseColumnNames="venta_id"
+            constraintName="fk_venta_asiento_venta_id"
+            referencedTableName="venta"
+            referencedColumnNames="id"/>
+    </changeSet>
+
+    <!-- Índices adicionales para mejorar rendimiento -->
+    <changeSet id="20251127000000-6" author="jhipster">
+        <createIndex indexName="idx_evento_estado" tableName="evento">
+            <column name="estado"/>
+        </createIndex>
+        <createIndex indexName="idx_evento_fecha" tableName="evento">
+            <column name="fecha"/>
+        </createIndex>
+        <createIndex indexName="idx_sesion_compra_usuario" tableName="sesion_compra">
+            <column name="usuario_id"/>
+        </createIndex>
+        <createIndex indexName="idx_sesion_compra_activa" tableName="sesion_compra">
+            <column name="activa"/>
+        </createIndex>
+        <createIndex indexName="idx_venta_usuario" tableName="venta">
+            <column name="usuario_id"/>
+        </createIndex>
+        <createIndex indexName="idx_venta_fecha" tableName="venta">
+            <column name="fecha_venta"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

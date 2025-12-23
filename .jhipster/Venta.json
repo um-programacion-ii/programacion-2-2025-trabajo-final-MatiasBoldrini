@@ -1,0 +1,65 @@
+{
+  "annotations": {
+    "changelogDate": "20251214234110"
+  },
+  "applications": "*",
+  "documentation": "Registro de una venta",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "ventaIdCatedra",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "fechaVenta",
+      "fieldType": "Instant",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "precioVenta",
+      "fieldType": "BigDecimal"
+    },
+    {
+      "fieldName": "resultado",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "descripcion",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "500"
+    }
+  ],
+  "jpaMetamodelFiltering": true,
+  "name": "Venta",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "documentation": "Una venta tiene varios asientos",
+      "otherEntityName": "ventaAsiento",
+      "otherEntityRelationshipName": "venta",
+      "relationshipName": "asientos",
+      "relationshipSide": "left",
+      "relationshipType": "one-to-many"
+    },
+    {
+      "documentation": "Cada venta pertenece a un usuario",
+      "otherEntityField": "login",
+      "otherEntityName": "user",
+      "relationshipName": "usuario",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one",
+      "relationshipWithBuiltInEntity": true
+    },
+    {
+      "documentation": "Cada venta está asociada a un evento",
+      "otherEntityField": "titulo",
+      "otherEntityName": "evento",
+      "relationshipName": "evento",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceImpl"
+}

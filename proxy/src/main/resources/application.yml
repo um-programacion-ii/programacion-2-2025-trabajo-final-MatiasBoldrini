@@ -1,0 +1,75 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: proxy-service
+  
+  # Configuración de Redis de Cátedra
+  data:
+    redis:
+      host: 192.168.194.250
+      port: 6379
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  
+  # Configuración de Kafka de Cátedra
+  kafka:
+    bootstrap-servers: 192.168.194.250:9092
+    consumer:
+      group-id: alumno-matias-boldrini
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: true
+      properties:
+        spring.json.trusted.packages: "*"
+
+# Configuración de la aplicación
+catedra:
+  kafka:
+    topic: eventos-actualizacion
+    debounce-seconds: 10
+    # Habilitar captura de muestras para análisis de esquema
+    capture-samples: true
+    samples-dir: logs/kafka-samples
+  redis:
+    key-prefix: evento_
+
+backend:
+  url: http://localhost:8080
+  auth:
+    username: ${BACKEND_SERVICE_USER:admin}
+    password: ${BACKEND_SERVICE_PASSWORD:admin}
+  # Endpoint de notificación (definir cuando el backend lo exponga)
+  # notify-endpoint: /api/eventos/notificar-actualizacion
+  jwt:
+    # Seguridad: el Proxy valida JWT emitidos por el Backend (JHipster HS512).
+    # Reutiliza el mismo secreto base64.
+    base64-secret: ${JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET:OTI3NDIyZjAwY2M5MmE3NmFmYmUzMGZmYmU4ODcwZDk4NTUyNzY0OWE0NDY3ZTcxMjQyMDQxYzYyZmMwYzkwNTQyZmQzYmRkMTBlZWMwMjdiZjZmYzcyMjc0ZDUzNDQ0MzdjMzMwZDkxNTA5MDJkMDE4MTEyYTZhMDNmN2VlNGE=}
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.eventos.proxy: DEBUG
+    org.springframework.kafka: INFO
+    org.springframework.data.redis: DEBUG
+
+
+
+
